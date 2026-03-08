@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+venv/
+env/
+.venv/
+
+# Environment — NEVER commit real .env
+.env
+!.env.example
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+dbt_project/.user.yml
+
+# Airflow
+logs/
+airflow.cfg
+airflow.db
+
+# Docker
+.docker/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data files
+*.csv
+!tests/fixtures/*.csv

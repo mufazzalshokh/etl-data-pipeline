@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ETL Pipeline Dashboard — Currency & Country Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  /* ── Reset & base ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --surface2:  #232635;
+    --border:    #2e3148;
+    --accent:    #6c63ff;
+    --accent2:   #00d4aa;
+    --accent3:   #ff6b6b;
+    --text:      #e2e8f0;
+    --text-muted:#8892a4;
+    --green:     #22c55e;
+    --red:       #ef4444;
+    --yellow:    #f59e0b;
+    --radius:    12px;
+    --font:      'Inter', -apple-system, sans-serif;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ───────────────────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: .75rem; }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -.02em; }
+  .logo-text span { font-size: .75rem; color: var(--text-muted); }
+  .status-pill {
+    display: flex; align-items: center; gap: .5rem;
+    background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
+    color: var(--green); border-radius: 999px; padding: .35rem .9rem;
+    font-size: .78rem; font-weight: 600;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green); animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:.4; }
+  }
+
+  main { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+  /* ── Pipeline Architecture Banner ────────────────────────────── */
+  .arch-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 2rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .arch-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-right: .5rem; }
+  .arch-step {
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .arch-badge {
+    padding: .3rem .75rem; border-radius: 6px; font-size: .78rem; font-weight: 600;
+  }
+  .badge-source  { background: rgba(108,99,255,.15); color: #a29bfe; border: 1px solid rgba(108,99,255,.3); }
+  .badge-bronze  { background: rgba(205,133,63,.15);  color: #cd853f; border: 1px solid rgba(205,133,63,.3);  }
+  .badge-silver  { background: rgba(192,192,192,.12); color: #c0c0c0; border: 1px solid rgba(192,192,192,.3); }
+  .badge-gold    { background: rgba(255,215,0,.12);   color: #ffd700; border: 1px solid rgba(255,215,0,.3);   }
+  .badge-dash    { background: rgba(0,212,170,.12);   color: var(--accent2); border: 1px solid rgba(0,212,170,.3); }
+  .arch-arrow { color: var(--text-muted); font-size: 1.1rem; }
+
+  /* ── KPI Cards ────────────────────────────────────────────────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .kpi-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .4rem; }
+  .kpi-value { font-size: 1.9rem; font-weight: 800; letter-spacing: -.03em; }
+  .kpi-sub   { font-size: .78rem; color: var(--text-muted); margin-top: .3rem; }
+  .kpi-delta { font-size: .78rem; font-weight: 600; }
+  .delta-up   { color: var(--green); }
+  .delta-down { color: var(--red); }
+
+  /* ── Charts Grid ──────────────────────────────────────────────── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem; margin-bottom: 2rem;
+  }
+  @media(max-width:900px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .chart-card.wide { grid-column: 1 / -1; }
+  .chart-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 1.25rem;
+  }
+  .chart-title { font-size: .92rem; font-weight: 600; }
+  .chart-sub   { font-size: .75rem; color: var(--text-muted); margin-top: .15rem; }
+  .chart-badge {
+    font-size: .7rem; padding: .2rem .55rem; border-radius: 999px; font-weight: 600;
+    background: rgba(108,99,255,.15); color: var(--accent); border: 1px solid rgba(108,99,255,.3);
+  }
+  canvas { max-height: 280px; }
+
+  /* ── Table ────────────────────────────────────────────────────── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .table-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .search-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: .45rem .9rem;
+    font-size: .83rem; outline: none; width: 220px;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: .72rem; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em;
+    padding: .6rem 1rem; border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid rgba(46,49,72,.5); transition: background .15s; }
+  tbody tr:hover { background: rgba(108,99,255,.05); }
+  tbody td { padding: .7rem 1rem; font-size: .85rem; }
+  .currency-flag { font-size: 1.1rem; margin-right: .4rem; }
+  .rate-up   { color: var(--green); font-weight: 600; }
+  .rate-down { color: var(--red);   font-weight: 600; }
+  .vol-badge {
+    padding: .15rem .5rem; border-radius: 4px; font-size: .7rem; font-weight: 600;
+  }
+  .vol-low    { background: rgba(34,197,94,.12);  color: var(--green); }
+  .vol-medium { background: rgba(245,158,11,.12); color: var(--yellow); }
+  .vol-high   { background: rgba(239,68,68,.12);  color: var(--red);   }
+
+  /* ── Pipeline Metrics ─────────────────────────────────────────── */
+  .pipeline-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .pipeline-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem 1.5rem;
+  }
+  .pipeline-card-header { display: flex; align-items: center; gap: .6rem; margin-bottom: 1rem; }
+  .pipeline-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .icon-dag   { background: rgba(108,99,255,.15); }
+  .icon-dbt   { background: rgba(255,107,107,.15); }
+  .icon-data  { background: rgba(0,212,170,.15); }
+  .pipeline-card-title { font-size: .85rem; font-weight: 600; }
+  .pipeline-metric { display: flex; justify-content: space-between; align-items: center; padding: .4rem 0; border-top: 1px solid var(--border); }
+  .pipeline-metric-label { font-size: .78rem; color: var(--text-muted); }
+  .pipeline-metric-value { font-size: .85rem; font-weight: 600; }
+  .success-text { color: var(--green); }
+
+  footer {
+    text-align: center; padding: 2rem; color: var(--text-muted);
+    font-size: .78rem; border-top: 1px solid var(--border); margin-top: 1rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">
+      <h1>ETL Pipeline Dashboard</h1>
+      <span>Bronze → Silver → Gold · Medallion Architecture</span>
+    </div>
+  </div>
+  <div class="status-pill">
+    <div class="status-dot"></div>
+    Pipeline Active
+  </div>
+</header>
+
+<main>
+
+  <!-- Architecture Banner -->
+  <div class="arch-banner">
+    <span class="arch-label">Data Flow</span>
+    <div class="arch-step">
+      <span class="arch-badge badge-source">Open Exchange Rates API</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-badge badge-source">REST Countries API</span>
+    </div>
+    <span class="arch-arrow">→</span>
+    <span class="arch-badge badge-bronze">🥉 Bronze (Raw)</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-badge badge-silver">🥈 Silver (Cleaned)</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-badge badge-gold">🥇 Gold (Aggregated)</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-badge badge-dash">📊 Dashboard</span>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Currencies Tracked</div>
+      <div class="kpi-value" id="kpi-currencies">170</div>
+      <div class="kpi-sub">Updated daily · Base: USD</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Countries Mapped</div>
+      <div class="kpi-value" id="kpi-countries">249</div>
+      <div class="kpi-sub">Updated weekly · REST Countries API</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg EUR/USD (30d)</div>
+      <div class="kpi-value" id="kpi-eurusd">1.0842</div>
+      <div class="kpi-sub kpi-delta delta-up" id="kpi-eurusd-delta">↑ +0.23% today</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pipeline Runs (30d)</div>
+      <div class="kpi-value" id="kpi-runs">30</div>
+      <div class="kpi-sub kpi-delta delta-up">✓ 100% success rate</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Records in Bronze</div>
+      <div class="kpi-value" id="kpi-records">5.1K</div>
+      <div class="kpi-sub">Total rows across all raw tables</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">dbt Tests Passing</div>
+      <div class="kpi-value" style="color:var(--green)" id="kpi-tests">24/24</div>
+      <div class="kpi-sub">not_null · unique · accepted_values</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">EUR/USD · GBP/USD · JPY/USD — 30-Day Trend</div>
+          <div class="chart-sub">Gold layer · agg_rates_by_region · 7-day moving average</div>
+        </div>
+        <span class="chart-badge">GOLD</span>
+      </div>
+      <canvas id="trendChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Currency Count by Region</div>
+          <div class="chart-sub">Silver · dim_countries</div>
+        </div>
+        <span class="chart-badge">SILVER</span>
+      </div>
+      <canvas id="regionChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Volatility Distribution</div>
+          <div class="chart-sub">Gold · agg_currency_summary</div>
+        </div>
+        <span class="chart-badge">GOLD</span>
+      </div>
+      <canvas id="volatilityChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Currency Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div>
+        <div class="chart-title">Live Currency Rates vs USD</div>
+        <div class="chart-sub">Gold layer · agg_currency_summary · refreshed daily</div>
+      </div>
+      <input class="search-input" id="tableSearch" type="text" placeholder="Search currency…" />
+    </div>
+    <table id="ratesTable">
+      <thead>
+        <tr>
+          <th>Currency</th>
+          <th>Rate (USD →)</th>
+          <th>Inverse</th>
+          <th>Day Change</th>
+          <th>30d Avg</th>
+          <th>Volatility</th>
+          <th>Region</th>
+        </tr>
+      </thead>
+      <tbody id="ratesBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Pipeline Metrics -->
+  <div class="pipeline-grid">
+    <div class="pipeline-card">
+      <div class="pipeline-card-header">
+        <div class="pipeline-icon icon-dag">🔄</div>
+        <div class="pipeline-card-title">Airflow DAGs</div>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">extract_currencies</span>
+        <span class="pipeline-metric-value success-text">✓ Daily 02:00 UTC</span>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">extract_countries</span>
+        <span class="pipeline-metric-value success-text">✓ Mon 03:00 UTC</span>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">run_dbt_transforms</span>
+        <span class="pipeline-metric-value success-text">✓ Daily 04:00 UTC</span>
+      </div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-card-header">
+        <div class="pipeline-icon icon-dbt">🔧</div>
+        <div class="pipeline-card-title">dbt Models</div>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">Bronze (views)</span>
+        <span class="pipeline-metric-value">stg_currencies, stg_countries</span>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">Silver (tables)</span>
+        <span class="pipeline-metric-value">dim_countries, fct_exchange_rates</span>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">Gold (tables)</span>
+        <span class="pipeline-metric-value">3 aggregation models</span>
+      </div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-card-header">
+        <div class="pipeline-icon icon-data">📊</div>
+        <div class="pipeline-card-title">Data Quality</div>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">not_null tests</span>
+        <span class="pipeline-metric-value success-text">✓ 12 passing</span>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">unique tests</span>
+        <span class="pipeline-metric-value success-text">✓ 6 passing</span>
+      </div>
+      <div class="pipeline-metric">
+        <span class="pipeline-metric-label">accepted_values tests</span>
+        <span class="pipeline-metric-value success-text">✓ 6 passing</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>ETL Data Pipeline · Built with Python · Apache Airflow · dbt · PostgreSQL · Docker</p>
+  <p style="margin-top:.4rem">
+    Medallion Architecture: Bronze → Silver → Gold ·
+    <a href="https://github.com/your-username/etl-data-pipeline" target="_blank">GitHub</a>
+  </p>
+</footer>
+
+<script>
+// ── Sample data (replace with API calls to your backend) ─────────────────────
+const currencies = [
+  { code:'EUR', name:'Euro',         flag:'🇪🇺', rate:0.9218, inverse:1.0848, change:+0.23, avg30d:0.9189, vol:'low',    region:'Europe'  },
+  { code:'GBP', name:'Brit. Pound',  flag:'🇬🇧', rate:0.7891, inverse:1.2673, change:-0.11, avg30d:0.7910, vol:'low',    region:'Europe'  },
+  { code:'JPY', name:'Yen',          flag:'🇯🇵', rate:149.82, inverse:0.00668,change:+0.41, avg30d:148.93, vol:'medium', region:'Asia'    },
+  { code:'CAD', name:'Can. Dollar',  flag:'🇨🇦', rate:1.3641, inverse:0.7331, change:-0.08, avg30d:1.3598, vol:'low',    region:'Americas'},
+  { code:'AUD', name:'Aus. Dollar',  flag:'🇦🇺', rate:1.5312, inverse:0.6531, change:+0.19, avg30d:1.5289, vol:'low',    region:'Oceania' },
+  { code:'CHF', name:'Swiss Franc',  flag:'🇨🇭', rate:0.8934, inverse:1.1193, change:+0.05, avg30d:0.8901, vol:'low',    region:'Europe'  },
+  { code:'CNY', name:'Yuan',         flag:'🇨🇳', rate:7.2394, inverse:0.1382, change:+0.02, avg30d:7.2311, vol:'low',    region:'Asia'    },
+  { code:'INR', name:'Indian Rupee', flag:'🇮🇳', rate:83.12,  inverse:0.01203,change:-0.31, avg30d:83.45,  vol:'medium', region:'Asia'    },
+  { code:'BRL', name:'Brazilian R.', flag:'🇧🇷', rate:4.9821, inverse:0.2007, change:+1.24, avg30d:4.8932, vol:'high',   region:'Americas'},
+  { code:'TRY', name:'Turkish Lira', flag:'🇹🇷', rate:31.45,  inverse:0.0318, change:+0.89, avg30d:30.12,  vol:'high',   region:'Europe'  },
+  { code:'SEK', name:'Swedish Kr.',  flag:'🇸🇪', rate:10.412, inverse:0.0960, change:-0.15, avg30d:10.389, vol:'low',    region:'Europe'  },
+  { code:'NOK', name:'Norwegian Kr.',flag:'🇳🇴', rate:10.589, inverse:0.0944, change:+0.22, avg30d:10.512, vol:'low',    region:'Europe'  },
+];
+
+// ── Populate table ────────────────────────────────────────────────────────────
+function renderTable(data) {
+  const tbody = document.getElementById('ratesBody');
+  tbody.innerHTML = data.map(c => `
+    <tr>
+      <td><span class="currency-flag">${c.flag}</span><strong>${c.code}</strong> <span style="color:var(--text-muted);font-size:.8rem">${c.name}</span></td>
+      <td><strong>${c.rate.toFixed(4)}</strong></td>
+      <td style="color:var(--text-muted)">${c.inverse.toFixed(4)}</td>
+      <td class="${c.change >= 0 ? 'rate-up' : 'rate-down'}">${c.change >= 0 ? '↑' : '↓'} ${Math.abs(c.change).toFixed(2)}%</td>
+      <td style="color:var(--text-muted)">${c.avg30d.toFixed(4)}</td>
+      <td><span class="vol-badge vol-${c.vol}">${c.vol}</span></td>
+      <td style="color:var(--text-muted)">${c.region}</td>
+    </tr>
+  `).join('');
+}
+renderTable(currencies);
+
+document.getElementById('tableSearch').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  renderTable(currencies.filter(c =>
+    c.code.toLowerCase().includes(q) ||
+    c.name.toLowerCase().includes(q) ||
+    c.region.toLowerCase().includes(q)
+  ));
+});
+
+// ── Trend chart (30-day EUR/GBP/JPY normalized) ───────────────────────────────
+const days = Array.from({length:30}, (_, i) => {
+  const d = new Date(); d.setDate(d.getDate() - (29 - i));
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+});
+const randn = (base, spread) => Array.from({length:30}, (_, i) =>
+  +(base + Math.sin(i/4)*spread + (Math.random()-.5)*spread*.5).toFixed(4)
+);
+
+new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{
+    labels: days,
+    datasets:[
+      { label:'EUR/USD', data:randn(.921,.008), borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,.08)', tension:.4, pointRadius:0, fill:true },
+      { label:'GBP/USD', data:randn(.789,.006), borderColor:'#00d4aa', backgroundColor:'rgba(0,212,170,.06)',  tension:.4, pointRadius:0, fill:true },
+      { label:'JPY/USD (÷100)', data:randn(1.498,.012), borderColor:'#ff6b6b', backgroundColor:'rgba(255,107,107,.06)', tension:.4, pointRadius:0, fill:true },
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ color:'#8892a4', boxWidth:12 } } },
+    scales:{
+      x:{ ticks:{color:'#8892a4', maxRotation:0, maxTicksLimit:8}, grid:{color:'#2e3148'} },
+      y:{ ticks:{color:'#8892a4'}, grid:{color:'#2e3148'} }
+    }
+  }
+});
+
+// ── Region donut ──────────────────────────────────────────────────────────────
+new Chart(document.getElementById('regionChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Europe','Asia','Americas','Africa','Oceania','Antarctic'],
+    datasets:[{
+      data:[44,50,35,54,14,2],
+      backgroundColor:['#6c63ff','#00d4aa','#ff6b6b','#f59e0b','#06b6d4','#8892a4'],
+      borderWidth:2, borderColor:'#1a1d27'
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ position:'right', labels:{ color:'#8892a4', boxWidth:12, font:{size:11} } }
+    }
+  }
+});
+
+// ── Volatility bar ────────────────────────────────────────────────────────────
+new Chart(document.getElementById('volatilityChart'), {
+  type:'bar',
+  data:{
+    labels:['Low','Medium','High'],
+    datasets:[{
+      label:'Currencies',
+      data:[112, 41, 17],
+      backgroundColor:['rgba(34,197,94,.3)','rgba(245,158,11,.3)','rgba(239,68,68,.3)'],
+      borderColor:['#22c55e','#f59e0b','#ef4444'],
+      borderWidth:2, borderRadius:6
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:false } },
+    scales:{
+      x:{ ticks:{color:'#8892a4'}, grid:{display:false} },
+      y:{ ticks:{color:'#8892a4'}, grid:{color:'#2e3148'} }
+    }
+  }
+});
+</script>
+</body>
+</html>

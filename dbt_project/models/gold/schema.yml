@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: agg_currency_summary
+    description: >
+      Latest exchange rate per currency with 30-day statistics.
+      Powers the main currency dashboard table.
+    columns:
+      - name: target_currency
+        description: ISO 4217 currency code — primary key for this model
+        tests:
+          - not_null
+          - unique
+
+      - name: latest_rate
+        description: Most recent exchange rate vs USD
+        tests:
+          - not_null
+
+      - name: rate_date
+        description: Date of the latest rate
+        tests:
+          - not_null
+
+      - name: volatility_tier
+        description: 30-day volatility classification
+        tests:
+          - accepted_values:
+              values: [low, medium, high]
+              config:
+                where: "volatility_tier is not null"
+
+  - name: agg_rates_by_region
+    description: >
+      Daily regional currency rate aggregation for trend analysis.
+      30-day rolling window with 7-day moving average.
+    columns:
+      - name: rate_date
+        description: Date of the aggregated rates
+        tests:
+          - not_null
+
+      - name: region
+        description: Geographic region
+        tests:
+          - not_null
+
+      - name: avg_rate
+        description: Average exchange rate for this region/currency/day
+        tests:
+          - not_null
+
+  - name: agg_country_currency_map
+    description: >
+      Country-level currency mapping with latest exchange rate context.
+      Powers the country drill-down and world map visualisation.
+    columns:
+      - name: cca2
+        description: ISO 3166-1 alpha-2 country code — primary key
+        tests:
+          - not_null
+          - unique
+
+      - name: name_common
+        description: Country name
+        tests:
+          - not_null

@@ -1,0 +1,32 @@
+# Airflow providers
+apache-airflow-providers-postgres==5.10.2
+apache-airflow-providers-http==4.9.1
+
+# Data processing
+pandas==2.2.1
+numpy==1.26.4
+
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==1.4.52
+
+# HTTP / API
+requests==2.31.0
+tenacity==8.2.3
+
+# dbt
+dbt-core==1.7.10
+dbt-postgres==1.7.10
+
+# Config & environment
+python-dotenv==1.0.1
+pydantic==2.6.3
+pydantic-settings==2.2.1
+
+# Utilities
+pytz==2024.1
+pendulum==3.0.0
+
+# Dev / testing
+pytest==8.1.0
+pytest-mock==3.12.0

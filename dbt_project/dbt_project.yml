@@ -1,0 +1,42 @@
+name: 'etl_pipeline'
+version: '1.0.0'
+config-version: 2
+
+profile: 'etl_pipeline'
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# Model configuration by layer
+# Each layer maps to a PostgreSQL schema with different materialization strategy
+
+models:
+  etl_pipeline:
+    # Bronze: source-facing views — never transform, just reference raw tables
+    bronze:
+      +materialized: view
+      +schema: bronze
+      +tags: ["bronze"]
+
+    # Silver: cleaned, typed, deduplicated — materialized as tables for performance
+    silver:
+      +materialized: table
+      +schema: silver
+      +tags: ["silver"]
+
+    # Gold: aggregated analytics layer — tables for dashboard performance
+    gold:
+      +materialized: table
+      +schema: gold
+      +tags: ["gold"]
+
+# Variable defaults — can be overridden at runtime
+
+vars:
+  # Used for incremental models to control lookback window
+  start_date: '2024-01-01'
