@@ -1,6 +1,6 @@
 # ETL Data Pipeline
 
-[![CI](https://github.com/your-username/etl-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/etl-data-pipeline/actions)
+[![CI](https://github.com/mufazzalshokh/etl-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/etl-data-pipeline/actions)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://python.org)
 [![dbt](https://img.shields.io/badge/dbt-1.7-orange.svg)](https://getdbt.com)
 [![Airflow](https://img.shields.io/badge/Airflow-2.8-green.svg)](https://airflow.apache.org)
