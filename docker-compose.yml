@@ -1,5 +1,3 @@
-version: "3.8"
-
 x-airflow-common: &airflow-common
   image: apache/airflow:2.8.1-python3.11
   environment: &airflow-common-env
@@ -62,7 +60,6 @@ services:
     command:
       - -c
       - |
-        pip install -r /requirements.txt --quiet
         airflow db upgrade
         airflow users create \
           --username ${AIRFLOW_USER} \
@@ -79,6 +76,11 @@ services:
     <<: *airflow-common
     container_name: etl_airflow_webserver
     command: webserver
+    environment:
+      <<: *airflow-common-env
+      AIRFLOW__WEBSERVER__WORKERS: 1
+      AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT: 300
+      AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: 300
     ports:
       - "8080:8080"
     healthcheck:
@@ -89,7 +91,7 @@ services:
     restart: unless-stopped
     depends_on:
       airflow-init:
-        condition: service_completed_successfully
+        condition: service_started
 
   # Airflow Scheduler
 
@@ -100,7 +102,7 @@ services:
     restart: unless-stopped
     depends_on:
       airflow-init:
-        condition: service_completed_successfully
+        condition: service_started
 
 volumes:
   postgres_data:
