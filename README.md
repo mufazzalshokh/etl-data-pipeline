@@ -137,7 +137,7 @@ etl-data-pipeline/
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/your-username/etl-data-pipeline.git
+git clone https://github.com/mufazzalshokh/etl-data-pipeline.git
 cd etl-data-pipeline
 
 cp .env.example .env
