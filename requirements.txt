@@ -28,5 +28,5 @@ pytz==2024.1
 pendulum==3.0.0
 
 # Dev / testing
-pytest==8.1.0
+pytest==8.1.1
 pytest-mock==3.12.0
