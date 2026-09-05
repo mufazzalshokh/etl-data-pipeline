@@ -69,7 +69,6 @@ class BaseExtractor(ABC):
         self.source_name = source_name
         self.logger = logging.getLogger(f"extractor.{source_name}")
 
-
     @abstractmethod
     def extract(self) -> list[dict[str, Any]]:
         """
@@ -82,7 +81,6 @@ class BaseExtractor(ABC):
         Raises:
             ExtractionError: if the source is unreachable or returns invalid data.
         """
-
 
     def extract_with_metadata(
         self,
@@ -132,7 +130,6 @@ class BaseExtractor(ABC):
         )
         return enriched
 
-
     def _extract_with_retry(self) -> list[dict[str, Any]]:
         """
         Wraps `extract()` with exponential backoff retry logic via tenacity.
@@ -162,7 +159,6 @@ class BaseExtractor(ABC):
                 f"Extraction failed for source '{self.source_name}' "
                 f"after {self.MAX_RETRIES} attempts: {exc}"
             ) from exc
-
 
     def validate_record(self, record: dict[str, Any]) -> bool:
         """
