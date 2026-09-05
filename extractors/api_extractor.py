@@ -62,7 +62,6 @@ class ApiExtractor(BaseExtractor):
         self.timeout = timeout or self.DEFAULT_TIMEOUT
         self.session = self._build_session(headers or {})
 
-
     def _build_session(self, headers: dict[str, str]) -> requests.Session:
         """
         Build a requests.Session with:
@@ -97,7 +96,6 @@ class ApiExtractor(BaseExtractor):
             }
         )
         return session
-
 
     def get(
         self,
