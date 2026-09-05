@@ -6,8 +6,13 @@
 -- Create Airflow's separate metadata database
 CREATE DATABASE airflow_metadata;
 
--- Connect to main ETL database and create medallion schemas
-\connect etl_pipeline;
+-- Schema-creation statements below run against whichever database this
+-- script was invoked against — the official Postgres Docker image already
+-- connects init scripts to the POSTGRES_DB-named database automatically,
+-- and CI invokes psql with an explicit -d flag. A hardcoded \connect here
+-- previously assumed the database was always named "etl_pipeline", which
+-- broke in CI (where it's "test_etl") and in any local setup using a
+-- different POSTGRES_DB value.
 
 -- Bronze layer: raw ingested data, immutable
 CREATE SCHEMA IF NOT EXISTS bronze;
