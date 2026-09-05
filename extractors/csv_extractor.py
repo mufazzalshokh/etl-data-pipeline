@@ -63,7 +63,6 @@ class CsvExtractor(BaseExtractor):
         self.dtype_mapping = dtype_mapping or {}
         self.delimiter = delimiter
 
-
     def extract(self) -> list[dict[str, Any]]:
         """
         Load CSV into a pandas DataFrame, clean it, and return as list[dict].
@@ -87,7 +86,6 @@ class CsvExtractor(BaseExtractor):
             len(df.columns),
         )
         return records
-
 
     def _fetch_content(self) -> str:
         """
