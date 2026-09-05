@@ -12,6 +12,26 @@ snapshot-paths: ["snapshots"]
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
+# CI/local test fixtures. `dbt seed` loads these CSVs into the bronze schema
+# so `dbt run` and `dbt test` have real source data to work against without
+# needing the actual Airflow extractors (which hit live external APIs) to
+# run first. Column names match sources.yml exactly.
+#
+# raw_countries needs explicit TEXT column_types: dbt would otherwise infer
+# numeric-looking columns (population, area_km2) as integer/decimal from the
+# CSV content, but the real bronze table (see loader.py's create_table_if_not_exists)
+# stores every field as TEXT by design — staging models like stg_countries.sql
+# use nullif(population, '') to safely handle missing values before casting,
+# which only works correctly when the source column is text.
+seeds:
+  etl_pipeline:
+    +schema: bronze
+    raw_countries:
+      +column_types:
+        population: text
+        area_km2: text
+        is_un_member: text
+
 # Model configuration by layer
 # Each layer maps to a PostgreSQL schema with different materialization strategy
 
