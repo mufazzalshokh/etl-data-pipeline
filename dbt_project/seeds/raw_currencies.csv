@@ -1,0 +1,5 @@
+base_currency,target_currency,rate,rate_date,timestamp,_source,_extracted_at,_pipeline_run_id
+USD,EUR,0.9234,2024-01-15,1705276800,open_exchange_rates,2024-01-15T00:05:00Z,ci_test_run_001
+USD,GBP,0.7891,2024-01-15,1705276800,open_exchange_rates,2024-01-15T00:05:00Z,ci_test_run_001
+USD,JPY,148.32,2024-01-15,1705276800,open_exchange_rates,2024-01-15T00:05:00Z,ci_test_run_001
+USD,UZS,12345.67,2024-01-15,1705276800,open_exchange_rates,2024-01-15T00:05:00Z,ci_test_run_001
