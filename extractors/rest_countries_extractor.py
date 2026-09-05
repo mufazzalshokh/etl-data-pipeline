@@ -68,7 +68,6 @@ class RestCountriesExtractor(ApiExtractor):
         self.logger.info("Extracted %d country records", len(records))
         return records
 
-
     def _flatten(self, country: dict[str, Any]) -> dict[str, Any]:
         """
         Normalize a single country object from the API response.
