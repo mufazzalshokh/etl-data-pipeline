@@ -129,7 +129,7 @@ class TestCsvExtractor:
     def test_empty_rows_dropped(self, tmp_path):
         csv_file = tmp_path / "empty_rows.csv"
         csv_file.write_text(
-            "Name,Value\nAlpha,1\n,,\nBeta,2\n",
+            "Name,Value\nAlpha,1\n,\nBeta,2\n",
             encoding="utf-8",
         )
         extractor = CsvExtractor(source_name="test", source_path=str(csv_file))
