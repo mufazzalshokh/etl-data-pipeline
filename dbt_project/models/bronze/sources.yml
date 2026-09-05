@@ -1,0 +1,70 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: >
+      Raw data ingested directly from external APIs and CSV files.
+      No transformations applied — this is the immutable landing zone.
+    schema: bronze
+    tables:
+      - name: raw_currencies
+        description: >
+          Daily currency exchange rates from Open Exchange Rates API.
+          One row per currency per day, relative to USD.
+        columns:
+          - name: base_currency
+            description: Base currency code (always USD on free tier)
+          - name: target_currency
+            description: ISO 4217 target currency code (e.g., EUR, GBP)
+          - name: rate
+            description: Exchange rate — units of target per 1 unit of base
+          - name: rate_date
+            description: Date the rate was published (YYYY-MM-DD)
+          - name: timestamp
+            description: Unix epoch of rate publication
+          - name: _source
+            description: Source identifier — "open_exchange_rates"
+          - name: _extracted_at
+            description: UTC timestamp when this record was extracted by the pipeline
+          - name: _pipeline_run_id
+            description: Airflow run_id — enables tracing to a specific DAG run
+
+      - name: raw_countries
+        description: >
+          Country metadata from REST Countries API.
+          One row per country. Updated weekly.
+        columns:
+          - name: cca2
+            description: ISO 3166-1 alpha-2 country code (e.g., DE, US)
+          - name: cca3
+            description: ISO 3166-1 alpha-3 country code (e.g., DEU, USA)
+          - name: name_common
+            description: Common country name (e.g., Germany)
+          - name: name_official
+            description: Official country name (e.g., Federal Republic of Germany)
+          - name: region
+            description: Geographic region (e.g., Europe, Asia)
+          - name: subregion
+            description: Geographic sub-region (e.g., Western Europe)
+          - name: capital
+            description: Capital city name
+          - name: population
+            description: Current population estimate
+          - name: area_km2
+            description: Country area in square kilometres
+          - name: currencies
+            description: Comma-separated ISO 4217 currency codes used
+          - name: languages
+            description: Comma-separated official language names
+          - name: timezones
+            description: Comma-separated timezone identifiers
+          - name: is_un_member
+            description: Whether the country is a UN member state
+          - name: flag_emoji
+            description: Unicode flag emoji for the country (e.g., "🇩🇪")
+          - name: _source
+            description: Source identifier — "rest_countries"
+          - name: _extracted_at
+            description: UTC timestamp when this record was extracted
+          - name: _pipeline_run_id
+            description: Airflow run_id for lineage tracing
