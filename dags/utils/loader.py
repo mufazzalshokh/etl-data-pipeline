@@ -10,17 +10,16 @@ Responsibilities:
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from typing import Any
 
 import psycopg2
 import psycopg2.extras
 
 logger = logging.getLogger(__name__)
+
 
 # Connection helper functions and context manager for PostgreSQL connections
 
@@ -46,7 +45,6 @@ def get_connection():
         raise
     finally:
         conn.close()
-
 
 
 def log_run_start(
@@ -98,7 +96,6 @@ def log_run_finish(
                 "records_loaded": records_loaded,
                 "error_message": error_message,
             })
-
 
 
 def load_records_to_bronze(
