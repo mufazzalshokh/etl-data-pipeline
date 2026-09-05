@@ -18,9 +18,9 @@ with countries as (
 latest_rates as (
     select
         target_currency,
-        rate                as latest_rate,
+        latest_rate,
         rate_date           as latest_rate_date,
-        rate_change_pct     as day_change_pct,
+        day_over_day_change_pct as day_change_pct,
         volatility_tier
     from {{ ref('agg_currency_summary') }}
 ),
