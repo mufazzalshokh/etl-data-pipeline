@@ -1,0 +1,4 @@
+cca2,cca3,name_common,name_official,region,subregion,capital,population,area_km2,currencies,languages,timezones,is_un_member,flag_emoji,_source,_extracted_at,_pipeline_run_id
+US,USA,United States,United States of America,Americas,North America,Washington D.C.,331002651,9372610,USD,English,UTC-05:00,true,🇺🇸,rest_countries,2024-01-15T00:10:00Z,ci_test_run_001
+DE,DEU,Germany,Federal Republic of Germany,Europe,Western Europe,Berlin,83240525,357114,EUR,German,UTC+01:00,true,🇩🇪,rest_countries,2024-01-15T00:10:00Z,ci_test_run_001
+UZ,UZB,Uzbekistan,Republic of Uzbekistan,Asia,Central Asia,Tashkent,34232050,447400,UZS,Uzbek,UTC+05:00,true,🇺🇿,rest_countries,2024-01-15T00:10:00Z,ci_test_run_001
